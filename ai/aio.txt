@@ -1,0 +1,2640 @@
+package CSP;
+
+import java.util.Scanner;
+
+public class CryptArithmatic {
+    public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
+        System.out.println("Enter the words and their sum:");
+        String w1 = scanner.nextLine().toUpperCase();
+        String w2 = scanner.nextLine().toUpperCase();
+        String w3 = scanner.nextLine().toUpperCase();
+
+        char[] letters = new char[10];
+        int l4 = extractUniqueLetters(w1, w2, w3, letters);
+
+        if (l4 > 10) {
+            System.out.println("Something is wrong with the input");
+            return;
+        }
+
+        int[] values = new int[10];
+        boolean[] used = new boolean[10];
+
+        if (solveCryptarithm(w1, w2, w3, letters, values, used, 0, l4)) {
+            System.out.println("Solution found:");
+            for (int i = 0; i < l4; i++) {
+                System.out.println(letters[i] + "=" + values[i]);
+            }
+        } else {
+            System.out.println("No solution found");
+        }
+    }
+
+    private static int extractUniqueLetters(String w1, String w2, String w3,
+            char[] letters) {
+        int l4 = 0;
+        for (char c : (w1 + w2 + w3).toCharArray()) {
+            if (pos(letters, c, l4) == -1) {
+                letters[l4++] = c;
+            }
+        }
+        return l4;
+    }
+
+    private static int pos(char[] str, char x, int length) {
+        for (int i = 0; i < length; i++) {
+            if (str[i] == x) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    private static boolean solveCryptarithm(String w1, String w2, String w3,
+            char[] letters, int[] values, boolean[] used, int index, int l4) {
+        if (index == l4) {
+            return getValue(w1, letters, values) + getValue(w2, letters, values) == getValue(w3, letters, values);
+        }
+        for (int i = 0; i <= 9; i++) {
+            if (!used[i]) {
+                values[index] = i;
+                used[i] = true;
+                if (solveCryptarithm(w1, w2, w3, letters, values, used, index + 1, l4)) {
+                    return true;
+                }
+                used[i] = false;
+            }
+        }
+        return false;
+    }
+
+    private static int getValue(String word, char[] letters, int[] values) {
+        int num = 0;
+        for (char c : word.toCharArray()) {
+            num = num * 10 + values[pos(letters, c, letters.length)];
+        }
+        return num;
+    }
+}
+
+===================================================================================================
+
+package CSP;
+public class NQueens {
+    final int N = 8;
+
+    void printSolution(int board[][]) {
+        for (int i = 0; i < N; i++) {
+            for (int j = 0; j < N; j++) {
+                System.out.print(board[i][j] == 1 ? "Q " : ". ");
+            }
+            System.out.println();
+        }
+    }
+
+    boolean isSafe(int board[][], int row, int col) {
+        for (int i = 0; i < col; i++)
+            if (board[row][i] == 1)
+                return false;
+        for (int i = row, j = col; i >= 0 && j >= 0; i--, j--)
+            if (board[i][j] == 1)
+                return false;
+        for (int i = row, j = col; j >= 0 && i < N; i++, j--)
+            if (board[i][j] == 1)
+                return false;
+        return true;
+    }
+
+    boolean solveNQUtil(int board[][], int col) {
+        if (col >= N)
+            return true;
+        for (int i = 0; i < N; i++) {
+            if (isSafe(board, i, col)) {
+                board[i][col] = 1;
+                if (solveNQUtil(board, col + 1))
+                    return true;
+                board[i][col] = 0;
+            }
+        }
+        return false;
+    }
+
+    boolean solveNQ() {
+        int board[][] = new int[N][N];
+        if (!solveNQUtil(board, 0)) {
+            System.out.print("Solution does not exist");
+            return false;
+        }
+        printSolution(board);
+        return true;
+    }
+
+    public static void main(String args[]) {
+        new NQueens().solveNQ();
+    }
+}
+
+===================================================================================================
+
+package InformedSearch.AOStar;
+
+import java.util.*;
+
+public class AOStar {
+    static class Node {
+        String name;
+        int heuristic;
+        int cost;
+        boolean isAndNode;
+        List<Node> children;
+
+        Node(String name, int heuristic, int cost, boolean isAndNode) {
+            this.name = name;
+            this.heuristic = heuristic;
+            this.cost = cost;
+            this.isAndNode = isAndNode;
+            this.children = new ArrayList<>();
+        }
+
+        void addChild(Node child) {
+            children.add(child);
+        }
+    }
+
+    private Node startNode;
+    private Node goalNode;
+
+    public AOStar(Node startNode, Node goalNode) {
+        this.startNode = startNode;
+        this.goalNode = goalNode;
+    }
+
+    public int f(Node node) {
+        return g(node) + h(node);
+    }
+
+    public int g(Node node) {
+        return node.cost;
+    }
+
+    public int h(Node node) {
+        return node.heuristic;
+    }
+
+    public void runAOStar(Node node) {
+        if (node == goalNode) {
+            return;
+        }
+
+        if (node.children.isEmpty()) {
+            return;
+        }
+
+        if (node.isAndNode) {
+            int sumCost = 0;
+            for (Node child : node.children) {
+                runAOStar(child);
+                sumCost += f(child);
+            }
+            node.heuristic = sumCost;
+        } else {
+            Node bestChild = null;
+            int minCost = Integer.MAX_VALUE;
+            for (Node child : node.children) {
+                runAOStar(child);
+                int currentCost = f(child);
+                if (currentCost < minCost) {
+                    minCost = currentCost;
+                    bestChild = child;
+                }
+            }
+            node.heuristic = minCost;
+            node.children.clear();
+            if (bestChild != null) {
+                node.addChild(bestChild);
+            }
+        }
+    }
+
+    public Node findPath() {
+        runAOStar(startNode);
+        return startNode;
+    }
+
+    public void printSolution(Node node, String indent) {
+        if (node == null) {
+            return;
+        }
+        System.out.println(indent + node.name + " (h=" + node.heuristic + ")");
+        for (Node child : node.children) {
+            printSolution(child, indent + "  ");
+        }
+    }
+
+    public static void main(String[] args) {
+        // Create nodes as per the given example
+        Node A = new Node("A", Integer.MAX_VALUE, 0, false);
+        Node B = new Node("B", 5, 1, false);
+        Node C = new Node("C", 2, 1, true);
+        Node D = new Node("D", 4, 1, false);
+        Node E = new Node("E", 7, 1, false);
+        Node F = new Node("F", 9, 1, false);
+        Node G = new Node("G", 3, 1, false);
+        Node H = new Node("H", 0, 1, false);
+        Node I = new Node("I", 0, 1, false);
+        Node J = new Node("J", 0, 1, false);
+
+        // Build the AND-OR graph
+        A.addChild(B);
+        A.addChild(C);
+        A.addChild(D);
+        B.addChild(E);
+        B.addChild(F);
+        C.addChild(G);
+        C.addChild(H);
+        C.addChild(I);
+        D.addChild(J);
+
+        // Set goal node
+        Node goalNode = J;
+
+        // Create an instance of AOStar and find the path
+        AOStar aoStar = new AOStar(A, goalNode);
+        Node path = aoStar.findPath();
+
+        // Print the solution path
+        System.out.println("Solution path:");
+        aoStar.printSolution(path, "");
+    }
+}
+
+===================================================================================================
+
+package InformedSearch.AStar;
+
+import java.util.*;
+
+public class EightPuzzleProblem {
+    private static final int SIZE = 3; // Size of the puzzle board
+    private static final int[][] GOAL_STATE = { { 1, 2, 3 }, { 4, 5, 6 }, { 7, 8, 0 } }; // Goal state
+
+    public static void main(String[] args) {
+        EightPuzzleProblem problem = new EightPuzzleProblem();
+        int[][] initialState = { { 1, 2, 3 }, { 0, 4, 6 }, { 7, 5, 8 } }; // Initial state
+
+        System.out.println("A* Search:");
+        printResult(problem.aStarSearch(initialState));
+    }
+
+    static class PuzzleState {
+        int[][] board;
+        String action;
+        int g; // Cost from initial state to current state
+
+        PuzzleState(int[][] board, String action, int g) {
+            this.board = board;
+            this.action = action;
+            this.g = g;
+        }
+
+        public boolean equals(Object o) {
+            if (this == o)
+                return true;
+            if (o == null || getClass() != o.getClass())
+                return false;
+            PuzzleState state = (PuzzleState) o;
+            return Arrays.deepEquals(board, state.board);
+        }
+
+        public int hashCode() {
+            return Arrays.deepHashCode(board);
+        }
+    }
+
+    private List<PuzzleState> getNeighbors(PuzzleState state) {
+        List<PuzzleState> neighbors = new ArrayList<>();
+        int zeroRow = -1, zeroCol = -1;
+        // Find the position of the zero (empty) tile
+        outerloop: for (int i = 0; i < SIZE; i++) {
+            for (int j = 0; j < SIZE; j++) {
+                if (state.board[i][j] == 0) {
+                    zeroRow = i;
+                    zeroCol = j;
+                    break outerloop;
+                }
+            }
+        }
+
+        // Generate neighbors by moving the zero tile
+        int[][] moves = { { -1, 0 }, { 1, 0 }, { 0, -1 }, { 0, 1 } };
+        for (int[] move : moves) {
+            int newRow = zeroRow + move[0];
+            int newCol = zeroCol + move[1];
+            if (isValidMove(newRow, newCol)) {
+                int[][] newBoard = copyBoard(state.board);
+                swap(newBoard, zeroRow, zeroCol, newRow, newCol);
+                neighbors.add(new PuzzleState(newBoard,
+                        "Move 0 from (" + zeroRow + "," + zeroCol + ") to (" + newRow + "," + newCol + ")",
+                        state.g + 1)); // Increment cost (g-value) by 1
+            }
+        }
+        return neighbors;
+    }
+
+    private boolean isValidMove(int row, int col) {
+        return row >= 0 && row < SIZE && col >= 0 && col < SIZE;
+    }
+
+    private int[][] copyBoard(int[][] board) {
+        int[][] newBoard = new int[SIZE][SIZE];
+        for (int i = 0; i < SIZE; i++) {
+            System.arraycopy(board[i], 0, newBoard[i], 0, SIZE);
+        }
+        return newBoard;
+    }
+
+    private void swap(int[][] board, int row1, int col1, int row2, int col2) {
+        int temp = board[row1][col1];
+        board[row1][col1] = board[row2][col2];
+        board[row2][col2] = temp;
+    }
+
+    private List<PuzzleState> constructPath(Map<PuzzleState, PuzzleState> parentMap, PuzzleState goal) {
+        List<PuzzleState> path = new ArrayList<>();
+        for (PuzzleState at = goal; at != null; at = parentMap.get(at))
+            path.add(at);
+        Collections.reverse(path);
+        return path;
+    }
+
+    public List<PuzzleState> aStarSearch(int[][] initialState) {
+        PriorityQueue<PuzzleState> priorityQueue = new PriorityQueue<>(Comparator.comparingInt(this::f));
+        Set<PuzzleState> visited = new HashSet<>();
+        Map<PuzzleState, PuzzleState> parentMap = new HashMap<>();
+        PuzzleState initialPuzzleState = new PuzzleState(initialState, "Initial State", 0);
+        priorityQueue.add(initialPuzzleState);
+        visited.add(initialPuzzleState);
+        while (!priorityQueue.isEmpty()) {
+            PuzzleState current = priorityQueue.poll();
+            if (isGoalState(current))
+                return constructPath(parentMap, current);
+            for (PuzzleState neighbor : getNeighbors(current)) {
+                int tentativeG = current.g + 1; // Cost of moving to neighbor is always 1
+                if (!visited.contains(neighbor) || tentativeG < neighbor.g) {
+                    neighbor.g = tentativeG;
+                    priorityQueue.add(neighbor);
+                    visited.add(neighbor);
+                    parentMap.put(neighbor, current);
+                }
+            }
+        }
+        return Collections.emptyList();
+    }
+
+    private int f(PuzzleState state) {
+        return g(state) + h(state);
+    }
+
+    private int g(PuzzleState state) {
+        return state.g;
+    }
+
+    private int h(PuzzleState state) {
+        int misplacedTiles = 0;
+        for (int i = 0; i < SIZE; i++) {
+            for (int j = 0; j < SIZE; j++) {
+                if (state.board[i][j] != 0 && state.board[i][j] != GOAL_STATE[i][j]) {
+                    misplacedTiles++;
+                }
+            }
+        }
+        return misplacedTiles;
+    }
+
+    private boolean isGoalState(PuzzleState state) {
+        return Arrays.deepEquals(state.board, GOAL_STATE);
+    }
+
+    private static void printResult(List<PuzzleState> result) {
+        if (result.isEmpty()) {
+            System.out.println("No solution found.");
+        } else {
+            for (int i = 0; i < result.size(); i++) {
+                PuzzleState state = result.get(i);
+                System.out.println("Step " + (i + 1) + ": " + state.action);
+                printBoard(state.board);
+            }
+            System.out.println("Total steps: " + result.size());
+        }
+    }
+
+    private static void printBoard(int[][] board) {
+        for (int i = 0; i < SIZE; i++) {
+            for (int j = 0; j < SIZE; j++) {
+                System.out.print(board[i][j] + " ");
+            }
+            System.out.println();
+        }
+        System.out.println();
+    }
+}
+
+===================================================================================================
+
+package InformedSearch.AStar;
+
+import java.util.*;
+
+public class MissionariesAndCannibalsProblem {
+
+    private static final int MISSIONARIES = 3, CANNIBALS = 3;
+
+    public static void main(String[] args) {
+        MissionariesAndCannibalsProblem problem = new MissionariesAndCannibalsProblem();
+        System.out.println("A* Search:");
+        printResult(problem.aStarSearch(), problem.bfsStates);
+    }
+
+    static class State {
+        int missionariesLeft, cannibalsLeft, missionariesRight, cannibalsRight;
+        boolean isBoatOnLeft;
+        String action;
+        int g; // Cost from initial state to current state
+
+        State(int missionariesLeft, int cannibalsLeft, int missionariesRight, int cannibalsRight, boolean isBoatOnLeft,
+                String action, int g) {
+            this.missionariesLeft = missionariesLeft;
+            this.cannibalsLeft = cannibalsLeft;
+            this.missionariesRight = missionariesRight;
+            this.cannibalsRight = cannibalsRight;
+            this.isBoatOnLeft = isBoatOnLeft;
+            this.action = action;
+            this.g = g;
+        }
+    }
+
+    private PriorityQueue<State> priorityQueue;
+    private int bfsStates = 0;
+
+    private List<State> getNeighbors(State state) {
+        List<State> neighbors = new ArrayList<>();
+        int missionariesLeft = state.missionariesLeft, cannibalsLeft = state.cannibalsLeft;
+        int missionariesRight = state.missionariesRight, cannibalsRight = state.cannibalsRight;
+        boolean isBoatOnLeft = state.isBoatOnLeft;
+
+        if (isBoatOnLeft) {
+            // Boat going from left to right
+            for (int m = 0; m <= 2; m++) {
+                for (int c = 0; c <= 2 - m; c++) {
+                    if (m + c >= 1 && m + c <= 2) {
+                        int newMissionariesLeft = missionariesLeft - m;
+                        int newCannibalsLeft = cannibalsLeft - c;
+                        int newMissionariesRight = missionariesRight + m;
+                        int newCannibalsRight = cannibalsRight + c;
+                        if (isValidState(newMissionariesLeft, newCannibalsLeft) &&
+                                isValidState(newMissionariesRight, newCannibalsRight)) {
+                            neighbors.add(new State(newMissionariesLeft, newCannibalsLeft,
+                                    newMissionariesRight, newCannibalsRight,
+                                    false, "Move " + m + " missionaries and " + c + " cannibals from left to right",
+                                    state.g + 1)); // Increment cost (g-value) by 1
+                        }
+                    }
+                }
+            }
+        } else {
+            // Boat going from right to left
+            for (int m = 0; m <= 2; m++) {
+                for (int c = 0; c <= 2 - m; c++) {
+                    if (m + c >= 1 && m + c <= 2) {
+                        int newMissionariesLeft = missionariesLeft + m;
+                        int newCannibalsLeft = cannibalsLeft + c;
+                        int newMissionariesRight = missionariesRight - m;
+                        int newCannibalsRight = cannibalsRight - c;
+                        if (isValidState(newMissionariesLeft, newCannibalsLeft) &&
+                                isValidState(newMissionariesRight, newCannibalsRight)) {
+                            neighbors.add(new State(newMissionariesLeft, newCannibalsLeft,
+                                    newMissionariesRight, newCannibalsRight,
+                                    true, "Move " + m + " missionaries and " + c + " cannibals from right to left",
+                                    state.g + 1)); // Increment cost (g-value) by 1
+                        }
+                    }
+                }
+            }
+        }
+        return neighbors;
+    }
+
+    private boolean isValidState(int missionaries, int cannibals) {
+        if ((missionaries > 0 && missionaries < cannibals) ||
+                (MISSIONARIES - missionaries > 0 && MISSIONARIES - missionaries < CANNIBALS - cannibals))
+            return false;
+        return missionaries >= 0 && missionaries <= MISSIONARIES && cannibals >= 0 && cannibals <= CANNIBALS;
+    }
+
+    private List<State> constructPath(Map<State, State> parentMap, State goal) {
+        List<State> path = new ArrayList<>();
+        for (State at = goal; at != null; at = parentMap.get(at))
+            path.add(at);
+        Collections.reverse(path);
+        return path;
+    }
+
+    public List<State> aStarSearch() {
+        priorityQueue = new PriorityQueue<>(Comparator.comparingInt(this::f));
+        Set<State> visited = new HashSet<>();
+        Map<State, State> parentMap = new HashMap<>();
+        State initialState = new State(MISSIONARIES, CANNIBALS, 0, 0, true, "Initial State", 0);
+        priorityQueue.add(initialState);
+        visited.add(initialState);
+        while (!priorityQueue.isEmpty()) {
+            State current = priorityQueue.poll();
+            bfsStates++;
+            if (current.missionariesLeft == 0 && current.cannibalsLeft == 0)
+                return constructPath(parentMap, current);
+            for (State neighbor : getNeighbors(current)) {
+                int tentativeG = current.g + 1; // Cost of moving to neighbor is always 1
+                if (!visited.contains(neighbor) || tentativeG < neighbor.g) {
+                    neighbor.g = tentativeG;
+                    priorityQueue.add(neighbor);
+                    visited.add(neighbor);
+                    parentMap.put(neighbor, current);
+                }
+            }
+        }
+        return Collections.emptyList();
+    }
+
+    private int f(State state) {
+        return g(state) + h(state);
+    }
+
+    private int g(State state) {
+        return state.g;
+    }
+
+    private int h(State state) {
+        return (MISSIONARIES + CANNIBALS) - (state.missionariesRight + state.cannibalsRight);
+    }
+
+    private static void printResult(List<State> result, int statesExplored) {
+        if (result.isEmpty()) {
+            System.out.println("No solution found.");
+        } else {
+            for (int i = 0; i < result.size(); i++) {
+                State state = result.get(i);
+                System.out.println("Step " + (i + 1) + ": " + state.action);
+            }
+            System.out.println("Total steps: " + result.size());
+            System.out.println("Total states explored: " + statesExplored);
+        }
+    }
+}
+
+
+===================================================================================================
+
+package InformedSearch.AStar;
+
+import java.util.*;
+
+class NQueens {
+    private int N;
+
+    public NQueens(int N) {
+        this.N = N;
+    }
+
+    private class BoardState implements Comparable<BoardState> {
+        int[] queens; // queens[i] = column of queen in row i
+        int g; // cost to reach this state (number of queens placed)
+        int h; // heuristic cost (estimated number of conflicts)
+        int f; // total cost (g + h)
+
+        BoardState(int[] queens, int g) {
+            this.queens = Arrays.copyOf(queens, N);
+            this.g = g;
+            this.h = calculateHeuristic(queens, g);
+            this.f = this.g + this.h;
+        }
+
+        private int calculateHeuristic(int[] queens, int g) {
+            int conflicts = 0;
+            for (int i = 0; i < g; i++) {
+                for (int j = i + 1; j < g; j++) {
+                    if (queens[i] == queens[j] || Math.abs(queens[i] - queens[j]) == j - i) {
+                        conflicts++;
+                    }
+                }
+            }
+            return conflicts;
+        }
+
+        @Override
+        public int compareTo(BoardState other) {
+            return Integer.compare(this.f, other.f);
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj)
+                return true;
+            if (obj == null || getClass() != obj.getClass())
+                return false;
+            BoardState that = (BoardState) obj;
+            return Arrays.equals(queens, that.queens);
+        }
+
+        @Override
+        public int hashCode() {
+            return Arrays.hashCode(queens);
+        }
+    }
+
+    public int[] solve() {
+        PriorityQueue<BoardState> openList = new PriorityQueue<>();
+        Set<BoardState> closedList = new HashSet<>();
+
+        int[] initialQueens = new int[N];
+        Arrays.fill(initialQueens, -1);
+        openList.add(new BoardState(initialQueens, 0));
+
+        while (!openList.isEmpty()) {
+            BoardState currentState = openList.poll();
+
+            if (currentState.g == N && currentState.h == 0) {
+                return currentState.queens; // Solution found
+            }
+
+            closedList.add(currentState);
+
+            int currentRow = currentState.g;
+            for (int col = 0; col < N; col++) {
+                if (isValid(currentState.queens, currentRow, col)) {
+                    int[] newQueens = Arrays.copyOf(currentState.queens, N);
+                    newQueens[currentRow] = col;
+                    BoardState newState = new BoardState(newQueens, currentRow + 1);
+
+                    if (!closedList.contains(newState)) {
+                        openList.add(newState);
+                    }
+                }
+            }
+        }
+
+        return null; // No solution found
+    }
+
+    private boolean isValid(int[] queens, int row, int col) {
+        for (int i = 0; i < row; i++) {
+            if (queens[i] == col || Math.abs(queens[i] - col) == row - i) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public static void main(String[] args) {
+        int N = 8; // Example for 8-Queens problem
+        NQueens solver = new NQueens(N);
+        int[] solution = solver.solve();
+
+        if (solution != null) {
+            System.out.println("Solution found:");
+            for (int i = 0; i < N; i++) {
+                for (int j = 0; j < N; j++) {
+                    if (solution[i] == j) {
+                        System.out.print("Q ");
+                    } else {
+                        System.out.print(". ");
+                    }
+                }
+                System.out.println();
+            }
+        } else {
+            System.out.println("No solution found.");
+        }
+    }
+}
+
+===================================================================================================
+
+package InformedSearch.AStar;
+
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.PriorityQueue;
+import java.util.Stack;
+
+public class ShortestPathAStar {
+    private static Stack<Integer> st = new Stack<>();
+
+    public static class State implements Comparable<State> {
+        int index;
+        int g; // Cost from start to this state
+        int h; // Heuristic cost to goal
+        State parent;
+
+        public State(int index, int g, int h, State parent) {
+            this.index = index;
+            this.g = g;
+            this.h = h;
+            this.parent = parent;
+        }
+
+        public int f() {
+            return this.g + this.h;
+        }
+
+        @Override
+        public int compareTo(State other) {
+            return this.f() - other.f();
+        }
+    }
+
+    public static int aStarSearch(int adjMatrix[][], int start, int goal, HashMap<Integer, Integer> heuristics) {
+        PriorityQueue<State> openSet = new PriorityQueue<>();
+        HashSet<Integer> closedSet = new HashSet<>();
+
+        openSet.add(new State(start, 0, heuristics.get(start), null));
+
+        while (!openSet.isEmpty()) {
+            State current = openSet.poll();
+
+            if (current.index == goal) {
+                System.out.println("Destination reached!");
+                printPath(current);
+                return current.g;
+            }
+
+            if (closedSet.contains(current.index)) {
+                continue;
+            }
+
+            closedSet.add(current.index);
+
+            for (int neighbor = 0; neighbor < adjMatrix.length; neighbor++) {
+                if (adjMatrix[current.index][neighbor] != 0 && adjMatrix[current.index][neighbor] != 9999) {
+                    int tentativeG = current.g + adjMatrix[current.index][neighbor];
+                    int h = heuristics.get(neighbor);
+                    State neighborState = new State(neighbor, tentativeG, h, current);
+
+                    if (!closedSet.contains(neighbor)) {
+                        openSet.add(neighborState);
+                    }
+                }
+            }
+        }
+        return -1; // Path not found
+    }
+
+    private static void printPath(State goalState) {
+        Stack<Integer> path = new Stack<>();
+        State current = goalState;
+        while (current != null) {
+            path.push(current.index);
+            current = current.parent;
+        }
+        System.out.print("Route is: ");
+        while (!path.isEmpty()) {
+            System.out.print(path.pop() + " ");
+        }
+        System.out.println();
+    }
+
+    public static void main(String[] args) {
+        int adjMatrix[][] = {
+                { 0, 75, 9999, 140, 9999, 9999, 9999, 9999 },
+                { 75, 0, 71, 9999, 9999, 9999, 9999, 9999 },
+                { 9999, 71, 0, 151, 9999, 9999, 9999, 9999 },
+                { 140, 9999, 151, 0, 80, 99, 9999, 9999 },
+                { 9999, 9999, 9999, 80, 0, 9999, 97, 9999 },
+                { 9999, 9999, 9999, 99, 9999, 0, 9999, 211 },
+                { 9999, 9999, 9999, 9999, 97, 9999, 0, 101 },
+                { 9999, 9999, 9999, 9999, 9999, 211, 101, 0 }
+        };
+        // Source - 0, Destination - 7
+        HashMap<Integer, Integer> heuristics = new HashMap<>();
+        // Heuristics (straight line distances from each city to 7)
+        heuristics.put(0, 366);
+        heuristics.put(1, 374);
+        heuristics.put(2, 380);
+        heuristics.put(3, 253);
+        heuristics.put(4, 193);
+        heuristics.put(5, 178);
+        heuristics.put(6, 98);
+        heuristics.put(7, 0);
+
+        int cost = aStarSearch(adjMatrix, 0, 7, heuristics);
+        System.out.println("Path cost is: " + cost);
+    }
+}
+
+===================================================================================================
+
+package InformedSearch.AStar;
+
+import java.util.*;
+
+public class WaterJugProblem {
+    private static final int JUG1_CAPACITY = 3, JUG2_CAPACITY = 5, TARGET = 4;
+
+    public static void main(String[] args) {
+        WaterJugProblem problem = new WaterJugProblem();
+        System.out.println("A* Search:");
+        printResult(problem.aStarSearch(), problem.astarStates);
+    }
+
+    static class State {
+        int jug1, jug2;
+        int g; // Cost to reach this state
+        String action;
+
+        State(int jug1, int jug2, int g, String action) {
+            this.jug1 = jug1;
+            this.jug2 = jug2;
+            this.g = g;
+            this.action = action;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o)
+                return true;
+            if (o == null || getClass() != o.getClass())
+                return false;
+            State state = (State) o;
+            return jug1 == state.jug1 && jug2 == state.jug2;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(jug1, jug2);
+        }
+
+        @Override
+        public String toString() {
+            return "jug1: " + jug1 + ", jug2: " + jug2 + " - " + action;
+        }
+    }
+
+    int astarStates = 0;
+
+    private List<State> getNeighbors(State state) {
+        List<State> neighbors = new ArrayList<>();
+        int jug1 = state.jug1, jug2 = state.jug2;
+        int g = state.g + 1; // Increment the cost for each action
+        neighbors.add(new State(JUG1_CAPACITY, jug2, g, "Fill Jug1"));
+        neighbors.add(new State(jug1, JUG2_CAPACITY, g, "Fill Jug2"));
+        neighbors.add(new State(0, jug2, g, "Empty Jug1"));
+        neighbors.add(new State(jug1, 0, g, "Empty Jug2"));
+        neighbors.add(new State(Math.max(0, jug1 - (JUG2_CAPACITY - jug2)), Math.min(JUG2_CAPACITY, jug1 + jug2), g,
+                "Pour Jug1 -> Jug2"));
+        neighbors.add(new State(Math.min(JUG1_CAPACITY, jug1 + jug2), Math.max(0, jug2 - (JUG1_CAPACITY - jug1)), g,
+                "Pour Jug2 -> Jug1"));
+        return neighbors;
+    }
+
+    private List<State> constructPath(Map<State, State> parentMap, State goal) {
+        List<State> path = new ArrayList<>();
+        for (State at = goal; at != null; at = parentMap.get(at))
+            path.add(at);
+        Collections.reverse(path);
+        return path;
+    }
+
+    public List<State> aStarSearch() {
+        PriorityQueue<State> openList = new PriorityQueue<>(Comparator.comparingInt(this::f));
+        Set<State> closedList = new HashSet<>();
+        Map<State, State> parentMap = new HashMap<>();
+        State initialState = new State(0, 0, 0, "Initial State");
+        openList.add(initialState);
+        while (!openList.isEmpty()) {
+            State current = openList.poll();
+            astarStates++;
+            if (current.jug2 == TARGET) {
+                return constructPath(parentMap, current);
+            }
+            closedList.add(current);
+            for (State neighbor : getNeighbors(current)) {
+                if (!closedList.contains(neighbor) && !openList.contains(neighbor)) {
+                    openList.add(neighbor);
+                    parentMap.put(neighbor, current);
+                }
+            }
+        }
+        return Collections.emptyList();
+    }
+
+    private int g(State state) {
+        return state.g;
+    }
+
+    private int h(State state) {
+        return Math.abs(state.jug2 - TARGET);
+    }
+
+    private int f(State state) {
+        return g(state) + h(state);
+    }
+
+    private static void printResult(List<State> result, int statesExplored) {
+        if (result.isEmpty()) {
+            System.out.println("No solution found.");
+        } else {
+            for (State state : result) {
+                System.out.println(state);
+            }
+            System.out.println("Total states explored: " + statesExplored);
+        }
+    }
+}
+
+===================================================================================================
+
+package InformedSearch.BestFS;
+
+import java.util.*;
+
+public class EightPuzzleProblem {
+    private static final int SIZE = 3; // Size of the puzzle board
+    private static final int[][] GOAL_STATE = { { 1, 2, 3 }, { 4, 5, 6 }, { 7, 8, 0 } }; // Goal state
+
+    public static void main(String[] args) {
+        EightPuzzleProblem problem = new EightPuzzleProblem();
+        int[][] initialState = { { 1, 2, 3 }, { 0, 4, 6 }, { 7, 5, 8 } }; // Initial state
+
+        System.out.println("Best First Search:");
+        printResult(problem.bestFirstSearch(initialState));
+    }
+
+    static class PuzzleState {
+        int[][] board;
+        String action;
+
+        PuzzleState(int[][] board, String action) {
+            this.board = board;
+            this.action = action;
+        }
+
+        public boolean equals(Object o) {
+            if (this == o)
+                return true;
+            if (o == null || getClass() != o.getClass())
+                return false;
+            PuzzleState state = (PuzzleState) o;
+            return Arrays.deepEquals(board, state.board);
+        }
+
+        public int hashCode() {
+            return Arrays.deepHashCode(board);
+        }
+    }
+
+    private List<PuzzleState> getNeighbors(PuzzleState state) {
+        List<PuzzleState> neighbors = new ArrayList<>();
+        int zeroRow = -1, zeroCol = -1;
+        // Find the position of the zero (empty) tile
+        outerloop: for (int i = 0; i < SIZE; i++) {
+            for (int j = 0; j < SIZE; j++) {
+                if (state.board[i][j] == 0) {
+                    zeroRow = i;
+                    zeroCol = j;
+                    break outerloop;
+                }
+            }
+        }
+
+        // Generate neighbors by moving the zero tile
+        int[][] moves = { { -1, 0 }, { 1, 0 }, { 0, -1 }, { 0, 1 } };
+        for (int[] move : moves) {
+            int newRow = zeroRow + move[0];
+            int newCol = zeroCol + move[1];
+            if (isValidMove(newRow, newCol)) {
+                int[][] newBoard = copyBoard(state.board);
+                swap(newBoard, zeroRow, zeroCol, newRow, newCol);
+                neighbors.add(new PuzzleState(newBoard,
+                        "Move 0 from (" + zeroRow + "," + zeroCol + ") to (" + newRow + "," + newCol + ")"));
+            }
+        }
+        return neighbors;
+    }
+
+    private boolean isValidMove(int row, int col) {
+        return row >= 0 && row < SIZE && col >= 0 && col < SIZE;
+    }
+
+    private int[][] copyBoard(int[][] board) {
+        int[][] newBoard = new int[SIZE][SIZE];
+        for (int i = 0; i < SIZE; i++) {
+            System.arraycopy(board[i], 0, newBoard[i], 0, SIZE);
+        }
+        return newBoard;
+    }
+
+    private void swap(int[][] board, int row1, int col1, int row2, int col2) {
+        int temp = board[row1][col1];
+        board[row1][col1] = board[row2][col2];
+        board[row2][col2] = temp;
+    }
+
+    private List<PuzzleState> constructPath(Map<PuzzleState, PuzzleState> parentMap, PuzzleState goal) {
+        List<PuzzleState> path = new ArrayList<>();
+        for (PuzzleState at = goal; at != null; at = parentMap.get(at))
+            path.add(at);
+        Collections.reverse(path);
+        return path;
+    }
+
+    public List<PuzzleState> bestFirstSearch(int[][] initialState) {
+        PriorityQueue<PuzzleState> priorityQueue = new PriorityQueue<>(Comparator.comparingInt(this::heuristic));
+        Set<PuzzleState> visited = new HashSet<>();
+        Map<PuzzleState, PuzzleState> parentMap = new HashMap<>();
+        PuzzleState initialPuzzleState = new PuzzleState(initialState, "Initial State");
+        priorityQueue.add(initialPuzzleState);
+        visited.add(initialPuzzleState);
+        while (!priorityQueue.isEmpty()) {
+            PuzzleState current = priorityQueue.poll();
+            System.out.println("Heuristic for state " + current.action + ": " + heuristic(current));
+            if (isGoalState(current))
+                return constructPath(parentMap, current);
+            for (PuzzleState neighbor : getNeighbors(current)) {
+                if (!visited.contains(neighbor)) {
+                    priorityQueue.add(neighbor);
+                    visited.add(neighbor);
+                    parentMap.put(neighbor, current);
+                }
+            }
+        }
+        return Collections.emptyList();
+    }
+
+    private int heuristic(PuzzleState state) {
+        int misplacedTiles = 0;
+        for (int i = 0; i < SIZE; i++) {
+            for (int j = 0; j < SIZE; j++) {
+                if (state.board[i][j] != 0 && state.board[i][j] != GOAL_STATE[i][j]) {
+                    misplacedTiles++;
+                }
+            }
+        }
+        return misplacedTiles;
+    }
+
+    private boolean isGoalState(PuzzleState state) {
+        return Arrays.deepEquals(state.board, GOAL_STATE);
+    }
+
+    private static void printResult(List<PuzzleState> result) {
+        if (result.isEmpty()) {
+            System.out.println("No solution found.");
+        } else {
+            for (int i = 0; i < result.size(); i++) {
+                PuzzleState state = result.get(i);
+                System.out.println("Step " + (i + 1) + ": " + state.action);
+                printBoard(state.board);
+            }
+            System.out.println("Total steps: " + result.size());
+        }
+    }
+
+    private static void printBoard(int[][] board) {
+        for (int i = 0; i < SIZE; i++) {
+            for (int j = 0; j < SIZE; j++) {
+                System.out.print(board[i][j] + " ");
+            }
+            System.out.println();
+        }
+        System.out.println();
+    }
+}
+
+===================================================================================================
+
+package InformedSearch.BestFS;
+
+import java.util.*;
+
+public class MissionariesAndCannibalsProblem {
+
+    private static final int MISSIONARIES = 3, CANNIBALS = 3;
+
+    public static void main(String[] args) {
+        MissionariesAndCannibalsProblem problem = new MissionariesAndCannibalsProblem();
+        System.out.println("Best First Search:");
+        printResult(problem.bestFirstSearch(), problem.bfsStates);
+    }
+
+    static class State {
+        int missionariesLeft, cannibalsLeft, missionariesRight, cannibalsRight;
+        boolean isBoatOnLeft;
+        String action;
+
+        State(int missionariesLeft, int cannibalsLeft, int missionariesRight, int cannibalsRight, boolean isBoatOnLeft,
+                String action) {
+            this.missionariesLeft = missionariesLeft;
+            this.cannibalsLeft = cannibalsLeft;
+            this.missionariesRight = missionariesRight;
+            this.cannibalsRight = cannibalsRight;
+            this.isBoatOnLeft = isBoatOnLeft;
+            this.action = action;
+        }
+    }
+
+    private PriorityQueue<State> priorityQueue;
+    private int bfsStates = 0;
+
+    private List<State> getNeighbors(State state) {
+        List<State> neighbors = new ArrayList<>();
+        int missionariesLeft = state.missionariesLeft, cannibalsLeft = state.cannibalsLeft;
+        int missionariesRight = state.missionariesRight, cannibalsRight = state.cannibalsRight;
+        boolean isBoatOnLeft = state.isBoatOnLeft;
+
+        if (isBoatOnLeft) {
+            // Boat going from left to right
+            for (int m = 0; m <= 2; m++) {
+                for (int c = 0; c <= 2 - m; c++) {
+                    if (m + c >= 1 && m + c <= 2) {
+                        int newMissionariesLeft = missionariesLeft - m;
+                        int newCannibalsLeft = cannibalsLeft - c;
+                        int newMissionariesRight = missionariesRight + m;
+                        int newCannibalsRight = cannibalsRight + c;
+                        if (isValidState(newMissionariesLeft, newCannibalsLeft) &&
+                                isValidState(newMissionariesRight, newCannibalsRight)) {
+                            neighbors.add(new State(newMissionariesLeft, newCannibalsLeft,
+                                    newMissionariesRight, newCannibalsRight,
+                                    false, "Move " + m + " missionaries and " + c + " cannibals from left to right"));
+                        }
+                    }
+                }
+            }
+        } else {
+            // Boat going from right to left
+            for (int m = 0; m <= 2; m++) {
+                for (int c = 0; c <= 2 - m; c++) {
+                    if (m + c >= 1 && m + c <= 2) {
+                        int newMissionariesLeft = missionariesLeft + m;
+                        int newCannibalsLeft = cannibalsLeft + c;
+                        int newMissionariesRight = missionariesRight - m;
+                        int newCannibalsRight = cannibalsRight - c;
+                        if (isValidState(newMissionariesLeft, newCannibalsLeft) &&
+                                isValidState(newMissionariesRight, newCannibalsRight)) {
+                            neighbors.add(new State(newMissionariesLeft, newCannibalsLeft,
+                                    newMissionariesRight, newCannibalsRight,
+                                    true, "Move " + m + " missionaries and " + c + " cannibals from right to left"));
+                        }
+                    }
+                }
+            }
+        }
+        return neighbors;
+    }
+
+    private boolean isValidState(int missionaries, int cannibals) {
+        if ((missionaries > 0 && missionaries < cannibals) ||
+                (MISSIONARIES - missionaries > 0 && MISSIONARIES - missionaries < CANNIBALS - cannibals))
+            return false;
+        return missionaries >= 0 && missionaries <= MISSIONARIES && cannibals >= 0 && cannibals <= CANNIBALS;
+    }
+
+    private List<State> constructPath(Map<State, State> parentMap, State goal) {
+        List<State> path = new ArrayList<>();
+        for (State at = goal; at != null; at = parentMap.get(at))
+            path.add(at);
+        Collections.reverse(path);
+        return path;
+    }
+
+    public List<State> bestFirstSearch() {
+        priorityQueue = new PriorityQueue<>(Comparator.comparingInt(this::heuristic));
+        Set<State> visited = new HashSet<>();
+        Map<State, State> parentMap = new HashMap<>();
+        State initialState = new State(MISSIONARIES, CANNIBALS, 0, 0, true, "Initial State");
+        priorityQueue.add(initialState);
+        visited.add(initialState);
+        while (!priorityQueue.isEmpty()) {
+            State current = priorityQueue.poll();
+            bfsStates++;
+            if (current.missionariesLeft == 0 && current.cannibalsLeft == 0)
+                return constructPath(parentMap, current);
+            for (State neighbor : getNeighbors(current)) {
+                if (!visited.contains(neighbor)) {
+                    priorityQueue.add(neighbor);
+                    visited.add(neighbor);
+                    parentMap.put(neighbor, current);
+                }
+            }
+        }
+        return Collections.emptyList();
+    }
+
+    private int heuristic(State state) {
+        return (MISSIONARIES + CANNIBALS) - (state.missionariesRight + state.cannibalsRight);
+    }
+
+    private static void printResult(List<State> result, int statesExplored) {
+        if (result.isEmpty()) {
+            System.out.println("No solution found.");
+        } else {
+            for (int i = 0; i < result.size(); i++) {
+                State state = result.get(i);
+                System.out.println("Step " + (i + 1) + ": " + state.action);
+            }
+            System.out.println("Total steps: " + result.size());
+            System.out.println("Total states explored: " + statesExplored);
+        }
+    }
+}
+
+===================================================================================================
+
+// Does not work
+
+package InformedSearch.BestFS;
+
+import java.util.*;
+
+class NQueens {
+    private int N;
+
+    public NQueens(int N) {
+        this.N = N;
+    }
+
+    private class BoardState implements Comparable<BoardState> {
+        int[] queens; // queens[i] = column of queen in row i
+        int h; // heuristic cost (number of misplaced queens)
+
+        BoardState(int[] queens) {
+            this.queens = Arrays.copyOf(queens, N);
+            this.h = calculateHeuristic(queens);
+        }
+
+        private int calculateHeuristic(int[] queens) {
+            int misplacedQueens = 0;
+            for (int i = 0; i < N; i++) {
+                if (queens[i] != i) { // If the queen is not in its expected row
+                    misplacedQueens++;
+                }
+            }
+            return misplacedQueens;
+        }
+
+        @Override
+        public int compareTo(BoardState other) {
+            return Integer.compare(this.h, other.h); // Prioritize based on heuristic cost
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj)
+                return true;
+            if (obj == null || getClass() != obj.getClass())
+                return false;
+            BoardState that = (BoardState) obj;
+            return Arrays.equals(queens, that.queens);
+        }
+
+        @Override
+        public int hashCode() {
+            return Arrays.hashCode(queens);
+        }
+    }
+
+    public int[] solve() {
+        PriorityQueue<BoardState> openList = new PriorityQueue<>();
+        Set<BoardState> closedList = new HashSet<>();
+
+        int[] initialQueens = new int[N];
+        Arrays.fill(initialQueens, -1); // Initialize with empty board
+        openList.add(new BoardState(initialQueens));
+
+        while (!openList.isEmpty()) {
+            BoardState currentState = openList.poll();
+
+            if (currentState.h == 0) {
+                return currentState.queens; // Solution found
+            }
+
+            closedList.add(currentState);
+
+            int currentRow = currentState.queens.length;
+            for (int col = 0; col < N; col++) {
+                if (isValid(currentState.queens, currentRow, col)) {
+                    int[] newQueens = Arrays.copyOf(currentState.queens, N);
+                    newQueens[currentRow] = col;
+                    BoardState newState = new BoardState(newQueens);
+
+                    if (!closedList.contains(newState)) {
+                        openList.add(newState);
+                    }
+                }
+            }
+        }
+
+        return null; // No solution found
+    }
+
+    private boolean isValid(int[] queens, int row, int col) {
+        for (int i = 0; i < row; i++) {
+            if (queens[i] == col || Math.abs(queens[i] - col) == row - i) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public static void main(String[] args) {
+        int N = 8; // Example for 8-Queens problem
+        NQueens solver = new NQueens(N);
+        int[] solution = solver.solve();
+
+        if (solution != null) {
+            System.out.println("Solution found:");
+            for (int i = 0; i < N; i++) {
+                for (int j = 0; j < N; j++) {
+                    if (solution[i] == j) {
+                        System.out.print("Q ");
+                    } else {
+                        System.out.print(". ");
+                    }
+                }
+                System.out.println();
+            }
+        } else {
+            System.out.println("No solution found.");
+        }
+    }
+}
+
+===================================================================================================
+
+package InformedSearch.BestFS;
+
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.PriorityQueue;
+import java.util.Stack;
+
+public class ShortestPath {
+    private static Stack<Integer> st = new Stack<>();
+
+    public static class State implements Comparable<State> {
+        int index;
+        int heuristics;
+        State parent;
+        int cost;
+
+        public State(int index, int heuristics, State parent, int cost) {
+            this.index = index;
+            this.heuristics = heuristics;
+            this.parent = parent;
+            this.cost = cost;
+        }
+
+        @Override
+        public int compareTo(State o) {
+            return this.heuristics - o.heuristics;
+        }
+    }
+
+    // Best First Search (BFS) function
+    public static int bfs(int adjMatrix[][], int s, int d, HashMap<Integer, Integer> heuristicMap) {
+        PriorityQueue<State> openQueue = new PriorityQueue<>();
+        HashSet<Integer> closedSet = new HashSet<>();
+        int h = heuristicMap.get(s);
+        openQueue.add(new State(s, h, null, 0));
+        int pathCost = 0;
+
+        while (!openQueue.isEmpty()) {
+            State currentState = openQueue.poll();
+            int currentIndex = currentState.index;
+
+            if (currentIndex == d) {
+                System.out.println("Destination reached!");
+                State temp = currentState;
+                while (temp != null) {
+                    st.push(temp.index);
+                    temp = temp.parent;
+                }
+                System.out.print("Route is: ");
+                while (!st.isEmpty()) {
+                    System.out.print(st.pop() + " ");
+                }
+                return currentState.cost;
+            }
+
+            if (closedSet.contains(currentIndex)) {
+                continue;
+            }
+
+            closedSet.add(currentIndex);
+            for (int j = 0; j < adjMatrix.length; j++) {
+                if (adjMatrix[currentIndex][j] != 0 && adjMatrix[currentIndex][j] != 9999) {
+                    int heu = heuristicMap.get(j);
+                    openQueue.add(new State(j, heu, currentState, currentState.cost + adjMatrix[currentIndex][j]));
+                }
+            }
+        }
+
+        return pathCost;
+    }
+
+    public static void main(String[] args) {
+        int adjMatrix[][] = {
+                { 0, 75, 9999, 140, 9999, 9999, 9999, 9999 },
+                { 75, 0, 71, 9999, 9999, 9999, 9999, 9999 },
+                { 9999, 71, 0, 151, 9999, 9999, 9999, 9999 },
+                { 140, 9999, 151, 0, 80, 99, 9999, 9999 },
+                { 9999, 9999, 9999, 80, 0, 9999, 97, 9999 },
+                { 9999, 9999, 9999, 99, 9999, 0, 9999, 211 },
+                { 9999, 9999, 9999, 9999, 97, 9999, 0, 101 },
+                { 9999, 9999, 9999, 9999, 9999, 211, 101, 0 }
+        };
+
+        // Heuristic values (straight line distances from each city to node 7)
+        HashMap<Integer, Integer> heuristicMap = new HashMap<>();
+        heuristicMap.put(0, 366);
+        heuristicMap.put(1, 374);
+        heuristicMap.put(2, 380);
+        heuristicMap.put(3, 253);
+        heuristicMap.put(4, 193);
+        heuristicMap.put(5, 178);
+        heuristicMap.put(6, 98);
+        heuristicMap.put(7, 0);
+
+        int cost = bfs(adjMatrix, 0, 7, heuristicMap);
+        System.out.println();
+        System.out.println("Path cost is: " + cost);
+    }
+}
+
+===================================================================================================
+
+package InformedSearch.BestFS;
+
+import java.util.*;
+
+public class WaterJugProblem {
+    private static final int JUG1_CAPACITY = 3, JUG2_CAPACITY = 5, TARGET = 4;
+
+    public static void main(String[] args) {
+        WaterJugProblem problem = new WaterJugProblem();
+        System.out.println("Best First Search:");
+        printResult(problem.bestFirstSearch(), problem.bfsStates);
+    }
+
+    static class State {
+        int jug1, jug2;
+        String action;
+
+        State(int jug1, int jug2, String action) {
+            this.jug1 = jug1;
+            this.jug2 = jug2;
+            this.action = action;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o)
+                return true;
+            if (o == null || getClass() != o.getClass())
+                return false;
+            State state = (State) o;
+            return jug1 == state.jug1 && jug2 == state.jug2;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(jug1, jug2);
+        }
+
+        @Override
+        public String toString() {
+            return "jug1: " + jug1 + ", jug2: " + jug2 + " - " + action;
+        }
+    }
+
+    int bfsStates = 0;
+
+    private List<State> getNeighbors(State state) {
+        List<State> neighbors = new ArrayList<>();
+        int jug1 = state.jug1, jug2 = state.jug2;
+        neighbors.add(new State(JUG1_CAPACITY, jug2, "Fill Jug1"));
+        neighbors.add(new State(jug1, JUG2_CAPACITY, "Fill Jug2"));
+        neighbors.add(new State(0, jug2, "Empty Jug1"));
+        neighbors.add(new State(jug1, 0, "Empty Jug2"));
+        neighbors.add(new State(Math.max(0, jug1 - (JUG2_CAPACITY - jug2)), Math.min(JUG2_CAPACITY, jug1 + jug2),
+                "Pour Jug1 -> Jug2"));
+        neighbors.add(new State(Math.min(JUG1_CAPACITY, jug1 + jug2), Math.max(0, jug2 - (JUG1_CAPACITY - jug1)),
+                "Pour Jug2 -> Jug1"));
+        return neighbors;
+    }
+
+    private List<State> constructPath(Map<State, State> parentMap, State goal) {
+        List<State> path = new ArrayList<>();
+        for (State at = goal; at != null; at = parentMap.get(at))
+            path.add(at);
+        Collections.reverse(path);
+        return path;
+    }
+
+    public List<State> bestFirstSearch() {
+        PriorityQueue<State> openList = new PriorityQueue<>(Comparator.comparingInt(this::heuristic));
+        Set<State> closedList = new HashSet<>();
+        Map<State, State> parentMap = new HashMap<>();
+        State initialState = new State(0, 0, "Initial State");
+        openList.add(initialState);
+        while (!openList.isEmpty()) {
+            State current = openList.poll();
+            bfsStates++;
+            if (current.jug2 == TARGET) {
+                return constructPath(parentMap, current);
+            }
+            closedList.add(current);
+            for (State neighbor : getNeighbors(current)) {
+                if (!closedList.contains(neighbor) && !openList.contains(neighbor)) {
+                    openList.add(neighbor);
+                    parentMap.put(neighbor, current);
+                }
+            }
+        }
+        return Collections.emptyList();
+    }
+
+    private int heuristic(State state) {
+        return Math.abs(state.jug2 - TARGET);
+    }
+
+    private static void printResult(List<State> result, int statesExplored) {
+        if (result.isEmpty()) {
+            System.out.println("No solution found.");
+        } else {
+            for (State state : result) {
+                System.out.println(state);
+            }
+            System.out.println("Total states explored: " + statesExplored);
+        }
+    }
+}
+
+===================================================================================================
+
+package InformedSearch.nthHillClimbing;
+
+import java.util.*;
+
+public class Main {
+
+    static final int N = 8;
+
+    static int calcEvaluationFunction(int[] board) {
+        int cnt = 0;
+        for (int i = 0; i < 8; ++i) {
+            for (int j = i + 1; j < 8; ++j) {
+                if (board[i] == board[j])
+                    ++cnt;
+                else if (Math.abs(i - j) == Math.abs(board[i] - board[j]))
+                    ++cnt;
+            }
+        }
+        return 28 - cnt;
+    }
+
+    static void printBoard(int[] board) {
+        int[][] grid = new int[10][10];
+        for (int[] row : grid) {
+            Arrays.fill(row, 0);
+        }
+        for (int i = 0; i < 8; ++i) {
+            grid[board[i]][i] = 1;
+        }
+        for (int i = 0; i < 8; ++i) {
+            for (int j = 0; j < 8; ++j)
+                System.out.print(grid[i][j] + " ");
+            System.out.println();
+        }
+    }
+
+    static void copyBoard(int[] board1, int[] board2) {
+        for (int i = 0; i < 8; ++i)
+            board1[i] = board2[i];
+    }
+
+    static boolean hillClimbing(int[] board) {
+        int[] bestBoard = new int[N];
+        int[] currBoard = new int[N];
+        copyBoard(bestBoard, board);
+
+        int bestValue, boardValue;
+        int cnt = 0;
+        while (true) {
+            copyBoard(currBoard, board);
+            boardValue = bestValue = calcEvaluationFunction(board);
+
+            if (bestValue == 28) {
+                System.out.println("Reached Global Maxima after " + cnt + " moves");
+                printBoard(bestBoard);
+                return true;
+            }
+
+            ++cnt;
+            for (int i = 0; i < 8; ++i) {
+                int temp = currBoard[i];
+                for (int j = 0; j < 8; ++j) {
+                    if (j == board[i])
+                        continue;
+                    currBoard[i] = j;
+                    int currValue = calcEvaluationFunction(currBoard);
+                    if (currValue > bestValue) {
+                        bestValue = currValue;
+                        copyBoard(bestBoard, currBoard);
+                    }
+                }
+                currBoard[i] = temp;
+            }
+            if (bestValue <= boardValue) {
+                System.out.println("Stucked in Local Maxima after " + cnt + " moves");
+                printBoard(bestBoard);
+                return false;
+            }
+            copyBoard(board, bestBoard);
+        }
+    }
+
+    public static void main(String[] args) {
+        boolean success;
+        int cnt = 1;
+        int[] board = new int[N];
+        Random rand = new Random();
+        while (true) {
+            for (int i = 0; i < 8; ++i)
+                board[i] = rand.nextInt(8);
+
+            System.out.println("======================== Iteration : " + cnt);
+            System.out.println("Initial Board");
+            printBoard(board);
+            success = hillClimbing(board);
+            ++cnt;
+
+            if (success)
+                break;
+        }
+    }
+}
+
+===================================================================================================
+
+package TicTacToe;
+
+import java.util.Scanner;
+
+public class AI {
+    private static final int HUMAN = -1, COMPUTER = 1;
+    private int[] board = new int[9];
+
+    public void playGame() {
+        for (int turn = 0; turn < 9; turn++) {
+            if (turn % 2 == 0)
+                computerMove();
+            else
+                humanMove();
+            printBoard();
+            int result = checkWin();
+            if (result != 0) {
+                System.out.println("Game Over. " + (result == COMPUTER ? "Computer wins!" : "You win!"));
+                return;
+            }
+        }
+        System.out.println("Game Over. It's a draw.");
+    }
+
+    private void computerMove() {
+        int bestScore = Integer.MIN_VALUE, move = -1;
+        for (int i = 0; i < 9; i++) {
+            if (board[i] == 0) {
+                board[i] = COMPUTER;
+                int score = minimax(false);
+                board[i] = 0;
+                if (score > bestScore) {
+                    bestScore = score;
+                    move = i;
+                }
+            }
+        }
+        board[move] = COMPUTER;
+    }
+
+    private void humanMove() {
+        Scanner scanner = new Scanner(System.in);
+        int move;
+        do {
+            System.out.println("Enter your move (1-9): ");
+            move = scanner.nextInt() - 1;
+        } while (move < 0 || move >= 9 || board[move] != 0);
+        board[move] = HUMAN;
+    }
+
+    private int minimax(boolean isMaximizing) {
+        int result = checkWin();
+        if (result != 0 || isBoardFull())
+            return result;
+        int bestScore = isMaximizing ? Integer.MIN_VALUE : Integer.MAX_VALUE;
+        for (int i = 0; i < 9; i++) {
+            if (board[i] == 0) {
+                board[i] = isMaximizing ? COMPUTER : HUMAN;
+                int score = minimax(!isMaximizing);
+                board[i] = 0;
+                bestScore = isMaximizing ? Math.max(score, bestScore) : Math.min(score, bestScore);
+            }
+        }
+        return bestScore;
+    }
+
+    private boolean isBoardFull() {
+        for (int i : board)
+            if (i == 0)
+                return false;
+        return true;
+    }
+
+    private int checkWin() {
+        int[][] winLines = {
+                { 0, 1, 2 }, { 3, 4, 5 }, { 6, 7, 8 }, // rows
+                { 0, 3, 6 }, { 1, 4, 7 }, { 2, 5, 8 }, // columns
+                { 0, 4, 8 }, { 2, 4, 6 } // diagonals
+        };
+        for (int[] line : winLines) {
+            int sum = board[line[0]] + board[line[1]] + board[line[2]];
+            if (sum == 3)
+                return COMPUTER;
+            if (sum == -3)
+                return HUMAN;
+        }
+        return 0;
+    }
+
+    private void printBoard() {
+        System.out.println();
+        for (int i = 0; i < 9; i++) {
+            System.out.print(board[i] == COMPUTER ? "X " : board[i] == HUMAN ? "O " : (i + 1) + " ");
+            if (i % 3 == 2)
+                System.out.println();
+        }
+    }
+
+    public static void main(String[] args) {
+        new AI().playGame();
+    }
+}
+
+===================================================================================================
+
+package TicTacToe;
+
+import java.util.*;
+
+public class NonAI {
+    private int[] board = new int[9];
+    private int[] magicSquare = { 2, 7, 6, 9, 5, 1, 4, 3, 8 };
+    private Random random = new Random();
+
+    public void playGame() {
+        for (int i = 0; i < 9; i++) {
+            if (i % 2 == 0) {
+                System.out.println("Computer's move: ");
+                computerMove();
+            } else {
+                humanMove();
+                System.out.println("User's move: ");
+            }
+            printBoard();
+            if (checkWin()) {
+                System.out.println("Game Over. Winner: " + (i % 2 == 0 ? "Computer" : "Human"));
+                return;
+            }
+        }
+        System.out.println("Game Over. It's a draw.");
+    }
+
+    private void computerMove() {
+        int move = findBestMove(1);
+        if (move == -1)
+            move = findBestMove(-1);
+        if (move == -1) {
+            do {
+                move = random.nextInt(9);
+            } while (board[move] != 0);
+        }
+        board[move] = 1;
+    }
+
+    private int findBestMove(int player) {
+        for (int i = 0; i < 9; i++) {
+            if (board[i] == 0) {
+                int sum = 0;
+                for (int j = 0; j < 9; j++) {
+                    if (board[j] == player)
+                        sum += magicSquare[j];
+                }
+                if (15 - sum == magicSquare[i])
+                    return i;
+            }
+        }
+        return -1;
+    }
+
+    private void humanMove() {
+        Scanner scanner = new Scanner(System.in);
+        int move;
+        do {
+            System.out.println("Enter your move (1-9): ");
+            move = scanner.nextInt() - 1;
+        } while (move < 0 || move >= 9 || board[move] != 0);
+        board[move] = -1;
+    }
+
+    private boolean checkWin() {
+        int[][] lines = {
+                { 0, 1, 2 }, { 3, 4, 5 }, { 6, 7, 8 }, // rows
+                { 0, 3, 6 }, { 1, 4, 7 }, { 2, 5, 8 }, // columns
+                { 0, 4, 8 }, { 2, 4, 6 } // diagonals
+        };
+        for (int[] line : lines) {
+            if (board[line[0]] != 0 && board[line[0]] == board[line[1]] && board[line[0]] == board[line[2]]) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void printBoard() {
+        for (int i = 0; i < 9; i++) {
+            System.out.print(board[i] == 1 ? "X " : board[i] == -1 ? "O " : (i + 1) + " ");
+            if (i % 3 == 2)
+                System.out.println();
+        }
+    }
+
+    public static void main(String[] args) {
+        new NonAI().playGame();
+    }
+}
+
+===================================================================================================
+
+package TicTacToe;
+
+import java.util.Scanner;
+
+public class NonAI2 {
+
+    private static final int BLANK = 2;
+    private static final int X = 3;
+    private static final int O = 5;
+    private int[] board = new int[10];
+    private int turn = 1;
+
+    public NonAI2() {
+        for (int i = 1; i < board.length; i++) {
+            board[i] = BLANK;
+        }
+    }
+
+    public int make2() {
+        if (board[5] == BLANK) {
+            return 5;
+        } else {
+            for (int i : new int[] { 2, 4, 6, 8 }) {
+                if (board[i] == BLANK) {
+                    return i;
+                }
+            }
+        }
+        for (int i : new int[] { 1, 3, 7, 9 }) {
+            if (board[i] == BLANK) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    public int possWin(int p) {
+        int[][] winPositions = { { 1, 2, 3 }, { 4, 5, 6 }, { 7, 8, 9 }, { 1, 4, 7 }, { 2, 5, 8 }, { 3, 6, 9 },
+                { 1, 5, 9 }, { 3, 5, 7 } };
+        for (int[] pos : winPositions) {
+            int prod = board[pos[0]] * board[pos[1]] * board[pos[2]];
+            if (p == X && prod == X * X * BLANK || p == O && prod == O * O * BLANK) {
+                for (int i = 0; i < 3; i++) {
+                    if (board[pos[i]] == BLANK) {
+                        return pos[i];
+                    }
+                }
+            }
+        }
+        return 0;
+    }
+
+    public void go(int n) {
+        if (turn % 2 == 0) {
+            board[n] = O;
+        } else {
+            board[n] = X;
+        }
+        turn++;
+    }
+
+    public void printBoard() {
+        for (int i = 1; i < board.length; i++) {
+            String val = board[i] == BLANK ? " " : (board[i] == X ? "X" : "O");
+            System.out.print(val + " ");
+            if (i % 3 == 0) {
+                System.out.println();
+            }
+        }
+    }
+
+    public boolean isGameOver() {
+        int[][] winPositions = { { 1, 2, 3 }, { 4, 5, 6 }, { 7, 8, 9 }, { 1, 4, 7 }, { 2, 5, 8 }, { 3, 6, 9 },
+                { 1, 5, 9 }, { 3, 5, 7 } };
+        int c = 0;
+        for (int[] pos : winPositions) {
+            int prod = board[pos[0]] * board[pos[1]] * board[pos[2]];
+            if (prod == X * X * X || prod == O * O * O) {
+                return true;
+            }
+        }
+
+        for (int a : board) {
+            if (a == BLANK) {
+                c++;
+            }
+        }
+        if (c == 0) {
+            return true;
+        }
+
+        return false;
+    }
+
+    public void play() {
+        Scanner scanner = new Scanner(System.in);
+
+        // Ask the user to choose X or O
+        System.out.println("Choose 1 for X, 2 for O:");
+        int choice = scanner.nextInt();
+        while (choice != 1 && choice != 2) {
+            System.out.println("Invalid choice. Choose 1 for X, 2 for O:");
+            choice = scanner.nextInt();
+        }
+
+        if (choice == 1) {
+            System.out.println("You chose X. You go first.");
+        } else {
+            System.out.println("You chose O. AI goes first.");
+            turn = 2; // AI goes first
+        }
+
+        while (turn <= 9) {
+            printBoard();
+            if (turn % 2 == 0) {
+                int pos = possWin(O);
+                if (pos == 0) {
+                    pos = make2();
+                }
+                if (pos != -1) {
+                    go(pos);
+                    System.out.println("AI moved to position " + pos);
+                }
+            } else {
+                System.out.println("Your turn. Enter position (1-9): ");
+                int pos = scanner.nextInt();
+                while (pos < 1 || pos > 9 || board[pos] != BLANK) {
+                    System.out.println("Invalid move. Try again: ");
+                    pos = scanner.nextInt();
+                }
+                go(pos);
+            }
+            if (isGameOver()) {
+                System.out.println("Game Over!");
+                break;
+            }
+        }
+        printBoard();
+    }
+
+    public static void main(String[] args) {
+        NonAI2 game = new NonAI2();
+        game.play();
+    }
+}
+
+===================================================================================================
+
+package UninformedSearch;
+
+import java.util.*;
+
+public class EightPuzzleProblem {
+    private static final int SIZE = 3; // Size of the puzzle board
+    private static final int[][] GOAL_STATE = { { 1, 2, 3 }, { 4, 5, 6 }, { 7, 8, 0 } }; // Goal state
+
+    public static void main(String[] args) {
+        EightPuzzleProblem problem = new EightPuzzleProblem();
+        int[][] initialState = { { 1, 2, 3 }, { 0, 4, 6 }, { 7, 5, 8 } }; // Updated initial state
+
+        System.out.println("BFS:");
+        printResult(problem.bfs(initialState), problem.bfsStates);
+
+        System.out.println("\nDFS:");
+        printResult(problem.dfs(initialState), problem.dfsStates);
+
+        System.out.println("\nDLS:");
+        printResult(problem.dls(initialState, 5), problem.dlsStates);
+
+        System.out.println("\nIDDFS:");
+        printResult(problem.iddfs(initialState), problem.iddfsStates);
+    }
+
+    static class PuzzleState {
+        int[][] board;
+
+        PuzzleState(int[][] board) {
+            this.board = board;
+        }
+
+        public boolean equals(Object o) {
+            if (this == o)
+                return true;
+            if (o == null || getClass() != o.getClass())
+                return false;
+            PuzzleState state = (PuzzleState) o;
+            return Arrays.deepEquals(board, state.board);
+        }
+
+        public int hashCode() {
+            return Arrays.deepHashCode(board);
+        }
+    }
+
+    int bfsStates = 0, dfsStates = 0, dlsStates = 0, temp = 0, iddfsStates = 0;
+
+    private List<PuzzleState> getNeighbors(PuzzleState state) {
+        List<PuzzleState> neighbors = new ArrayList<>();
+        int zeroRow = -1, zeroCol = -1;
+        // Find the position of the zero (empty) tile
+        outerloop: for (int i = 0; i < SIZE; i++) {
+            for (int j = 0; j < SIZE; j++) {
+                if (state.board[i][j] == 0) {
+                    zeroRow = i;
+                    zeroCol = j;
+                    break outerloop;
+                }
+            }
+        }
+
+        // Generate neighbors by moving the zero tile
+        int[][] moves = { { -1, 0 }, { 1, 0 }, { 0, -1 }, { 0, 1 } };
+        for (int[] move : moves) {
+            int newRow = zeroRow + move[0];
+            int newCol = zeroCol + move[1];
+            if (isValidMove(newRow, newCol)) {
+                int[][] newBoard = copyBoard(state.board);
+                swap(newBoard, zeroRow, zeroCol, newRow, newCol);
+                neighbors.add(new PuzzleState(newBoard));
+            }
+        }
+        return neighbors;
+    }
+
+    private boolean isValidMove(int row, int col) {
+        return row >= 0 && row < SIZE && col >= 0 && col < SIZE;
+    }
+
+    private int[][] copyBoard(int[][] board) {
+        int[][] newBoard = new int[SIZE][SIZE];
+        for (int i = 0; i < SIZE; i++) {
+            System.arraycopy(board[i], 0, newBoard[i], 0, SIZE);
+        }
+        return newBoard;
+    }
+
+    private void swap(int[][] board, int row1, int col1, int row2, int col2) {
+        int temp = board[row1][col1];
+        board[row1][col1] = board[row2][col2];
+        board[row2][col2] = temp;
+    }
+
+    private List<PuzzleState> constructPath(Map<PuzzleState, PuzzleState> parentMap, PuzzleState goal) {
+        List<PuzzleState> path = new ArrayList<>();
+        for (PuzzleState at = goal; at != null; at = parentMap.get(at))
+            path.add(at);
+        Collections.reverse(path);
+        return path;
+    }
+
+    public List<PuzzleState> bfs(int[][] initialState) {
+        Queue<PuzzleState> queue = new LinkedList<>();
+        Set<PuzzleState> visited = new HashSet<>();
+        Map<PuzzleState, PuzzleState> parentMap = new HashMap<>();
+        PuzzleState initialPuzzleState = new PuzzleState(initialState);
+        queue.add(initialPuzzleState);
+        visited.add(initialPuzzleState);
+        while (!queue.isEmpty()) {
+            PuzzleState current = queue.poll();
+            bfsStates++;
+            if (isGoalState(current))
+                return constructPath(parentMap, current);
+            for (PuzzleState neighbor : getNeighbors(current)) {
+                if (!visited.contains(neighbor)) {
+                    queue.add(neighbor);
+                    visited.add(neighbor);
+                    parentMap.put(neighbor, current);
+                }
+            }
+        }
+        return Collections.emptyList();
+    }
+
+    public List<PuzzleState> dfs(int[][] initialState) {
+        Stack<PuzzleState> stack = new Stack<>();
+        Set<PuzzleState> visited = new HashSet<>();
+        Map<PuzzleState, PuzzleState> parentMap = new HashMap<>();
+        PuzzleState initialPuzzleState = new PuzzleState(initialState);
+        stack.push(initialPuzzleState);
+        visited.add(initialPuzzleState);
+        while (!stack.isEmpty()) {
+            PuzzleState current = stack.pop();
+            dfsStates++;
+            if (isGoalState(current))
+                return constructPath(parentMap, current);
+            for (PuzzleState neighbor : getNeighbors(current)) {
+                if (!visited.contains(neighbor)) {
+                    stack.push(neighbor);
+                    visited.add(neighbor);
+                    parentMap.put(neighbor, current);
+                }
+            }
+        }
+        return Collections.emptyList();
+    }
+
+    public List<PuzzleState> dls(int[][] initialState, int limit) {
+        return dlsRecursive(new PuzzleState(initialState), new HashSet<>(), new HashMap<>(), limit);
+    }
+
+    private List<PuzzleState> dlsRecursive(PuzzleState current, Set<PuzzleState> visited,
+            Map<PuzzleState, PuzzleState> parentMap, int limit) {
+        dlsStates++;
+        temp++;
+        if (isGoalState(current))
+            return constructPath(parentMap, current);
+        if (limit == 0)
+            return Collections.emptyList();
+        visited.add(current);
+        for (PuzzleState neighbor : getNeighbors(current)) {
+            if (!visited.contains(neighbor)) {
+                parentMap.put(neighbor, current);
+                List<PuzzleState> result = dlsRecursive(neighbor, visited, parentMap, limit - 1);
+                if (!result.isEmpty())
+                    return result;
+            }
+        }
+        visited.remove(current);
+        return Collections.emptyList();
+    }
+
+    public List<PuzzleState> iddfs(int[][] initialState) {
+        List<PuzzleState> result;
+        int depth;
+        for (depth = 0;; depth++) {
+            temp = 0;
+            result = dls(initialState, depth);
+            iddfsStates += temp;
+            if (!result.isEmpty())
+                return result;
+        }
+    }
+
+    private boolean isGoalState(PuzzleState state) {
+        return Arrays.deepEquals(state.board, GOAL_STATE);
+    }
+
+    private static void printResult(List<PuzzleState> result, int statesExplored) {
+        if (result.isEmpty()) {
+            System.out.println("No solution found.");
+        } else {
+            for (int i = 0; i < result.size(); i++) {
+                System.out.println("Step " + i + ":");
+                printBoard(result.get(i).board);
+            }
+            System.out.println("Total states explored: " + statesExplored);
+        }
+    }
+
+    private static void printBoard(int[][] board) {
+        for (int i = 0; i < SIZE; i++) {
+            for (int j = 0; j < SIZE; j++) {
+                System.out.print(board[i][j] + " ");
+            }
+            System.out.println();
+        }
+        System.out.println();
+    }
+}
+
+===================================================================================================
+
+package UninformedSearch;
+
+import java.util.*;
+
+public class MissionariesAndCannibalsProblem {
+    private static final int MISSIONARIES = 3, CANNIBALS = 3;
+    private static final int BOAT_CAPACITY = 2;
+
+    public static void main(String[] args) {
+        MissionariesAndCannibalsProblem problem = new MissionariesAndCannibalsProblem();
+        System.out.println("BFS:");
+        printResult(problem.bfs(), problem.bfsStates);
+        System.out.println("\nDFS:");
+        printResult(problem.dfs(), problem.dfsStates);
+        System.out.println("\nDLS:");
+        printResult(problem.dls(15), problem.dlsStates);
+        System.out.println("\nIDDFS:");
+        printResult(problem.iddfs(), problem.iddfsStates);
+
+        System.out.println("\nComparison:");
+        System.out.println("BFS explored " + problem.bfsStates + " states.");
+        System.out.println("DFS explored " + problem.dfsStates + " states.");
+        System.out.println("DLS explored " + (problem.dlsStates - problem.iddfsStates) + " states.");
+        System.out.println("IDDFS explored " + problem.iddfsStates + " states.");
+    }
+
+    static class State {
+        int missionariesLeft, cannibalsLeft, missionariesRight, cannibalsRight;
+        boolean isBoatOnLeft;
+        String action;
+
+        State(int missionariesLeft, int cannibalsLeft, int missionariesRight, int cannibalsRight, boolean isBoatOnLeft,
+                String action) {
+            this.missionariesLeft = missionariesLeft;
+            this.cannibalsLeft = cannibalsLeft;
+            this.missionariesRight = missionariesRight;
+            this.cannibalsRight = cannibalsRight;
+            this.isBoatOnLeft = isBoatOnLeft;
+            this.action = action;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o)
+                return true;
+            if (o == null || getClass() != o.getClass())
+                return false;
+            State state = (State) o;
+            return missionariesLeft == state.missionariesLeft && cannibalsLeft == state.cannibalsLeft &&
+                    missionariesRight == state.missionariesRight && cannibalsRight == state.cannibalsRight &&
+                    isBoatOnLeft == state.isBoatOnLeft;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(missionariesLeft, cannibalsLeft, missionariesRight, cannibalsRight, isBoatOnLeft);
+        }
+    }
+
+    int bfsStates = 0, dfsStates = 0, dlsStates = 0, temp = 0, iddfsStates = 0;
+
+    private List<State> getNeighbors(State state) {
+        List<State> neighbors = new ArrayList<>();
+        int missionariesLeft = state.missionariesLeft, cannibalsLeft = state.cannibalsLeft;
+        int missionariesRight = state.missionariesRight, cannibalsRight = state.cannibalsRight;
+        boolean isBoatOnLeft = state.isBoatOnLeft;
+
+        if (isBoatOnLeft) {
+            // Boat going from left to right
+            for (int m = 0; m <= BOAT_CAPACITY; m++) {
+                for (int c = 0; c <= BOAT_CAPACITY - m; c++) {
+                    if (m + c >= 1 && m + c <= BOAT_CAPACITY) {
+                        int newMissionariesLeft = missionariesLeft - m;
+                        int newCannibalsLeft = cannibalsLeft - c;
+                        int newMissionariesRight = missionariesRight + m;
+                        int newCannibalsRight = cannibalsRight + c;
+                        if (isValidState(newMissionariesLeft, newCannibalsLeft) &&
+                                isValidState(newMissionariesRight, newCannibalsRight)) {
+                            neighbors.add(new State(newMissionariesLeft, newCannibalsLeft,
+                                    newMissionariesRight, newCannibalsRight,
+                                    false, "Move " + m + " missionaries and " + c + " cannibals from left to right"));
+                        }
+                    }
+                }
+            }
+        } else {
+            // Boat going from right to left
+            for (int m = 0; m <= BOAT_CAPACITY; m++) {
+                for (int c = 0; c <= BOAT_CAPACITY - m; c++) {
+                    if (m + c >= 1 && m + c <= BOAT_CAPACITY) {
+                        int newMissionariesLeft = missionariesLeft + m;
+                        int newCannibalsLeft = cannibalsLeft + c;
+                        int newMissionariesRight = missionariesRight - m;
+                        int newCannibalsRight = cannibalsRight - c;
+                        if (isValidState(newMissionariesLeft, newCannibalsLeft) &&
+                                isValidState(newMissionariesRight, newCannibalsRight)) {
+                            neighbors.add(new State(newMissionariesLeft, newCannibalsLeft,
+                                    newMissionariesRight, newCannibalsRight,
+                                    true, "Move " + m + " missionaries and " + c + " cannibals from right to left"));
+                        }
+                    }
+                }
+            }
+        }
+        return neighbors;
+    }
+
+    private boolean isValidState(int missionaries, int cannibals) {
+        // Check if the number of cannibals does not outnumber the missionaries on both
+        // sides
+        if ((missionaries > 0 && missionaries < cannibals) ||
+                (MISSIONARIES - missionaries > 0 && MISSIONARIES - missionaries < CANNIBALS - cannibals))
+            return false;
+        // Check if the number of missionaries and cannibals are within the valid range
+        return missionaries >= 0 && missionaries <= MISSIONARIES && cannibals >= 0 && cannibals <= CANNIBALS;
+    }
+
+    private List<State> constructPath(Map<State, State> parentMap, State goal) {
+        List<State> path = new ArrayList<>();
+        for (State at = goal; at != null; at = parentMap.get(at))
+            path.add(at);
+        Collections.reverse(path);
+        return path;
+    }
+
+    public List<State> bfs() {
+        Queue<State> queue = new LinkedList<>();
+        Set<State> visited = new HashSet<>();
+        Map<State, State> parentMap = new HashMap<>();
+        State initialState = new State(MISSIONARIES, CANNIBALS, 0, 0, true, "Initial State");
+        queue.add(initialState);
+        visited.add(initialState);
+        while (!queue.isEmpty()) {
+            State current = queue.poll();
+            bfsStates++;
+            if (current.missionariesLeft == 0 && current.cannibalsLeft == 0)
+                return constructPath(parentMap, current);
+            for (State neighbor : getNeighbors(current)) {
+                if (!visited.contains(neighbor)) {
+                    queue.add(neighbor);
+                    visited.add(neighbor);
+                    parentMap.put(neighbor, current);
+                }
+            }
+        }
+        return Collections.emptyList();
+    }
+
+    public List<State> dfs() {
+        Stack<State> stack = new Stack<>();
+        Set<State> visited = new HashSet<>();
+        Map<State, State> parentMap = new HashMap<>();
+        State initialState = new State(MISSIONARIES, CANNIBALS, 0, 0, true, "Initial State");
+        stack.push(initialState);
+        visited.add(initialState);
+        while (!stack.isEmpty()) {
+            State current = stack.pop();
+            dfsStates++;
+            if (current.missionariesLeft == 0 && current.cannibalsLeft == 0)
+                return constructPath(parentMap, current);
+            for (State neighbor : getNeighbors(current)) {
+                if (!visited.contains(neighbor)) {
+                    stack.push(neighbor);
+                    visited.add(neighbor);
+                    parentMap.put(neighbor, current);
+                }
+            }
+        }
+        return Collections.emptyList();
+    }
+
+    public List<State> dls(int limit) {
+        return dlsRecursive(new State(MISSIONARIES, CANNIBALS, 0, 0, true, "Initial State"), new HashSet<>(),
+                new HashMap<>(), limit);
+    }
+
+    private List<State> dlsRecursive(State current, Set<State> visited, Map<State, State> parentMap, int limit) {
+        dlsStates++;
+        temp++;
+        if (current.missionariesLeft == 0 && current.cannibalsLeft == 0)
+            return constructPath(parentMap, current);
+        if (limit == 0)
+            return Collections.emptyList();
+        visited.add(current);
+        for (State neighbor : getNeighbors(current)) {
+            if (!visited.contains(neighbor)) {
+                parentMap.put(neighbor, current);
+                List<State> result = dlsRecursive(neighbor, visited, parentMap, limit - 1);
+                if (!result.isEmpty())
+                    return result;
+            }
+        }
+        visited.remove(current);
+        return Collections.emptyList();
+    }
+
+    public List<State> iddfs() {
+        List<State> result;
+        int depth;
+        for (depth = 0;; depth++) {
+            temp = 0;
+            result = dls(depth);
+            iddfsStates += temp;
+            if (!result.isEmpty())
+                return result;
+        }
+    }
+
+    private static void printResult(List<State> result, int statesExplored) {
+        if (result.isEmpty()) {
+            System.out.println("No solution found.");
+        } else {
+            for (int i = 0; i < result.size(); i++) {
+                State state = result.get(i);
+                System.out.println("Step " + (i + 1) + ": " + state.action);
+            }
+            System.out.println("Total steps: " + result.size());
+            System.out.println("Total states explored: " + statesExplored);
+        }
+    }
+}
+
+===================================================================================================
+
+package UninformedSearch;
+
+import java.util.*;
+
+public class WaterJugProblem {
+    private static final int JUG1_CAPACITY = 3, JUG2_CAPACITY = 5, TARGET = 4;
+
+    public static void main(String[] args) {
+        WaterJugProblem problem = new WaterJugProblem();
+        System.out.println("BFS:");
+        printResult(problem.bfs(), problem.bfsStates);
+        System.out.println("\nDFS:");
+        printResult(problem.dfs(), problem.dfsStates);
+        System.out.println("\nDLS:");
+        printResult(problem.dls(10), problem.dlsStates);
+        System.out.println("\nIDDFS:");
+        printResult(problem.iddfs(), problem.iddfsStates);
+
+        System.out.println("\nComparison:");
+        System.out.println("BFS explored " + problem.bfsStates + " states.");
+        System.out.println("DFS explored " + problem.dfsStates + " states.");
+        System.out.println("DLS explored " + (problem.dlsStates - problem.iddfsStates) + " states.");
+        System.out.println("IDDFS explored " + problem.iddfsStates + " states.");
+    }
+
+    static class State {
+        int jug1, jug2;
+        String action;
+
+        State(int jug1, int jug2, String action) {
+            this.jug1 = jug1;
+            this.jug2 = jug2;
+            this.action = action;
+        }
+
+        public boolean equals(Object o) {
+            if (this == o)
+                return true;
+            if (o == null || getClass() != o.getClass())
+                return false;
+            State state = (State) o;
+            return jug1 == state.jug1 && jug2 == state.jug2;
+        }
+
+        public int hashCode() {
+            return Objects.hash(jug1, jug2);
+        }
+
+        public String toString() {
+            return "jug1: " + jug1 + ", jug2: " + jug2 + " - " + action;
+        }
+    }
+
+    int bfsStates = 0, dfsStates = 0, dlsStates = 0, temp = 0, iddfsStates = 0;
+
+    private List<State> getNeighbors(State state) {
+        List<State> neighbors = new ArrayList<>();
+        int jug1 = state.jug1, jug2 = state.jug2;
+        neighbors.add(new State(JUG1_CAPACITY, jug2, "Fill Jug1"));
+        neighbors.add(new State(jug1, JUG2_CAPACITY, "Fill Jug2"));
+        neighbors.add(new State(0, jug2, "Empty Jug1"));
+        neighbors.add(new State(jug1, 0, "Empty Jug2"));
+        neighbors.add(new State(Math.max(0, jug1 - (JUG2_CAPACITY - jug2)), Math.min(JUG2_CAPACITY, jug1 + jug2),
+                "Pour Jug1 -> Jug2"));
+        neighbors.add(new State(Math.min(JUG1_CAPACITY, jug1 + jug2), Math.max(0, jug2 - (JUG1_CAPACITY - jug1)),
+                "Pour Jug2 -> Jug1"));
+        return neighbors;
+    }
+
+    private List<State> constructPath(Map<State, State> parentMap, State goal) {
+        List<State> path = new ArrayList<>();
+        for (State at = goal; at != null; at = parentMap.get(at))
+            path.add(at);
+        Collections.reverse(path);
+        return path;
+    }
+
+    public List<State> bfs() {
+        Queue<State> queue = new LinkedList<>();
+        Set<State> visited = new HashSet<>();
+        Map<State, State> parentMap = new HashMap<>();
+        State initialState = new State(0, 0, "Initial State");
+        queue.add(initialState);
+        visited.add(initialState);
+        while (!queue.isEmpty()) {
+            State current = queue.poll();
+            bfsStates++;
+            if (current.jug1 == TARGET || current.jug2 == TARGET)
+                return constructPath(parentMap, current);
+            for (State neighbor : getNeighbors(current)) {
+                if (!visited.contains(neighbor)) {
+                    queue.add(neighbor);
+                    visited.add(neighbor);
+                    parentMap.put(neighbor, current);
+                }
+            }
+        }
+        return Collections.emptyList();
+    }
+
+    public List<State> dfs() {
+        Stack<State> stack = new Stack<>();
+        Set<State> visited = new HashSet<>();
+        Map<State, State> parentMap = new HashMap<>();
+        stack.push(new State(0, 0, "Initial State"));
+        visited.add(new State(0, 0, "Initial State"));
+        while (!stack.isEmpty()) {
+            State current = stack.pop();
+            dfsStates++;
+            if (current.jug1 == TARGET || current.jug2 == TARGET)
+                return constructPath(parentMap, current);
+            for (State neighbor : getNeighbors(current)) {
+                if (!visited.contains(neighbor)) {
+                    stack.push(neighbor);
+                    visited.add(neighbor);
+                    parentMap.put(neighbor, current);
+                }
+            }
+        }
+        return Collections.emptyList();
+    }
+
+    public List<State> dls(int limit) {
+        return dlsRecursive(new State(0, 0, "Initial State"), new HashSet<>(), new HashMap<>(), limit);
+    }
+
+    private List<State> dlsRecursive(State current, Set<State> visited, Map<State, State> parentMap, int limit) {
+        dlsStates++;
+        temp++;
+        if (current.jug1 == TARGET || current.jug2 == TARGET)
+            return constructPath(parentMap, current);
+        if (limit == 0)
+            return Collections.emptyList();
+        visited.add(current);
+        for (State neighbor : getNeighbors(current)) {
+            if (!visited.contains(neighbor)) {
+                parentMap.put(neighbor, current);
+                List<State> result = dlsRecursive(neighbor, visited, parentMap, limit - 1);
+                if (!result.isEmpty())
+                    return result;
+            }
+        }
+        visited.remove(current);
+        return Collections.emptyList();
+    }
+
+    public List<State> iddfs() {
+        List<State> result;
+        int depth;
+        for (depth = 0;; depth++) {
+            temp = 0;
+            result = dls(depth);
+            iddfsStates += temp;
+            if (!result.isEmpty())
+                return result;
+        }
+    }
+
+    private static void printResult(List<State> result, int statesExplored) {
+        if (result.isEmpty()) {
+            System.out.println("No solution found.");
+        } else {
+            for (State state : result) {
+                System.out.println(state);
+            }
+            System.out.println("Total states explored: " + statesExplored);
+        }
+    }
+}
